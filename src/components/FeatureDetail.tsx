@@ -68,6 +68,10 @@ export function FeatureDetail({
 
   return (
     <div className="rm-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+      {/* `data-cms-path` scopes the field annotations below to this feature's
+          file, so a preview rings the open feature and not a card behind it;
+          `data-cms-field` names each rendered field as the editor reports
+          it. Only the CMS's preview iframe ever reads them. */}
       <div
         ref={panel}
         className="rm-detail"
@@ -75,25 +79,30 @@ export function FeatureDetail({
         aria-modal="true"
         aria-labelledby="rm-detail-title"
         tabIndex={-1}
+        data-cms-path={f.path}
       >
         <div className="rm-detail__head">
           <div>
             <div className="rm-detail__crumbs">
-              <Badge>{f.status}</Badge>
+              <span data-cms-field="status" style={{ display: "contents" }}>
+                <Badge>{f.status}</Badge>
+              </span>
               <span className="ds-meta">{f.path}</span>
             </div>
-            <h2 id="rm-detail-title">{f.title}</h2>
+            <h2 id="rm-detail-title" data-cms-field="title">
+              {f.title}
+            </h2>
           </div>
           <IconButton name="x" label="Close" bare className="rm-detail__close" onClick={onClose} />
         </div>
 
         <div className="rm-detail__body">
           <div className="rm-detail__main">
-            <div className="rm-detail__desc" dangerouslySetInnerHTML={{ __html: f.bodyHtml }} />
+            <div className="rm-detail__desc" data-cms-field="body" dangerouslySetInnerHTML={{ __html: f.bodyHtml }} />
             {f.mockup && (
               <>
                 <SectionLabel className="rm-label">Mockup</SectionLabel>
-                <div className="rm-mockup">
+                <div className="rm-mockup" data-cms-field="mockup">
                   <Mockup kind={f.mockup} />
                 </div>
                 <div className="rm-mockup__caption rm-mono">Rendered live from the design system · not an image</div>

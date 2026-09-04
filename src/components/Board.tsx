@@ -6,15 +6,19 @@ function FeatureCard({ row, maxScore, onOpen }: { row: Row; maxScore: number; on
   const f = row.feature;
   const badge = mineBadge(row.mine);
   return (
-    <button type="button" className="rm-card" onClick={() => onOpen(f.id)} aria-haspopup="dialog">
+    <button type="button" className="rm-card" onClick={() => onOpen(f.id)} aria-haspopup="dialog" data-cms-path={f.path}>
       <div className="rm-card__row">
-        <div className="rm-card__title">{f.title}</div>
+        <div className="rm-card__title" data-cms-field="title">
+          {f.title}
+        </div>
         <span className="rm-card__score rm-mono">{row.score ?? "—"}</span>
       </div>
-      <div className="rm-card__blurb">{f.blurb}</div>
+      <div className="rm-card__blurb" data-cms-field="blurb">
+        {f.blurb}
+      </div>
       <ScoreBar counts={row.counts} maxScore={maxScore} />
       <div className="rm-card__meta rm-mono">
-        <span>{f.area}</span>
+        <span data-cms-field="area">{f.area}</span>
         <span className="rm-card__dot">·</span>
         <span>{f.updatedLabel}</span>
         <div className="rm-spacer" />
