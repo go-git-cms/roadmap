@@ -1,0 +1,15 @@
+---
+import RoadmapLayout from "~/layouts/RoadmapLayout.astro";
+import RoadmapApp from "~/components/RoadmapApp";
+import { pageProps } from "~/lib/page";
+
+// Your endorsements. Session-gated: a signed-out visitor is sent to the board
+// rather than shown an empty account view for nobody.
+if (!Astro.locals.viewer) return Astro.redirect("/", 302);
+
+const props = await pageProps(Astro, "me");
+---
+
+<RoadmapLayout title="Your endorsements">
+  <RoadmapApp {...props} client:load />
+</RoadmapLayout>

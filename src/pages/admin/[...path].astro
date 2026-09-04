@@ -1,0 +1,50 @@
+---
+// The self-hosted editor's deep links.
+//
+// `make roadmap-dev` builds the editor SPA into public/admin (see cms.config.mjs
+// and the Makefile's roadmap-admin target). Astro serves everything in public/
+// verbatim, so its index.html, JS and CSS are already handled; what is not is
+// every URL *inside* the editor. Those are client-side routes with no file
+// behind them, so a reload of
+//
+//   /admin/app/{workspace}/repositories/{repo}/projects/roadmap/...
+//
+// would 404 without this route. It answers any unmatched path under /admin with
+// the SPA's index.html, and the router takes it from there. In the container
+// Caddy does the same with try_files and this route is never reached; it
+// exists for `astro dev` and for a bare `node dist/server/entry.mjs`.
+
+import fs from "node:fs";
+import path from "node:path";
+
+export const prerender = false;
+
+// Where the built index.html is, in the two layouts this app runs in: the dev
+// server reads public/ from the package directory, and a built server serves
+// dist/client, into which the same public/ tree was copied. Both resolved from
+// cwd: dev runs in apps/roadmap, the container in /app.
+const CANDIDATES = ["public/admin/index.html", "dist/client/admin/index.html"];
+
+const file = CANDIDATES.map((p) => path.resolve(process.cwd(), p)).find((p) => fs.existsSync(p));
+
+// Not built is the normal state of a plain `astro dev`, or of an image built
+// without GITCMS_API_URL. 404 rather than 500: there is genuinely nothing here.
+if (!file) {
+  return new Response(
+    "The editor is not built. Run `make roadmap-dev`, or `node ../../apps/editor/bin/gogitcms-editor.mjs build --out public/admin` in apps/roadmap.",
+    { status: 404, headers: { "Content-Type": "text/plain; charset=utf-8" } },
+  );
+}
+
+// The editor is a different application that happens to share this origin, and
+// it holds an access token. Keep it out of caches and out of frames, and do not
+// let it be indexed alongside the roadmap.
+return new Response(fs.readFileSync(file), {
+  status: 200,
+  headers: {
+    "Content-Type": "text/html; charset=utf-8",
+    "Cache-Control": "no-store",
+    "X-Robots-Tag": "noindex",
+  },
+});
+---

@@ -1,0 +1,16 @@
+{
+  "extends": "astro/tsconfigs/strict",
+  "include": [".astro/types.d.ts", "**/*"],
+  // public/ is served verbatim and belongs to no program — and `make
+  // roadmap-admin` puts a ~2 MB minified bundle in it (public/admin, the
+  // self-hosted editor), which `astro check` would otherwise load into the
+  // language server until it runs the heap out.
+  "exclude": ["dist", "public", "local"],
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+    "paths": {
+      "~/*": ["./src/*"]
+    }
+  }
+}

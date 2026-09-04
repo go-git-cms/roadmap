@@ -1,0 +1,14 @@
+---
+import RoadmapLayout from "~/layouts/RoadmapLayout.astro";
+import RoadmapApp from "~/components/RoadmapApp";
+import { pageProps } from "~/lib/page";
+
+// The ranked list: every feature ordered by weighted score. Same island as the
+// board with a different view, so the active area filter carries across the
+// tab switch as a query parameter.
+const props = await pageProps(Astro, "ranked");
+---
+
+<RoadmapLayout title="Endorsements">
+  <RoadmapApp {...props} client:load />
+</RoadmapLayout>

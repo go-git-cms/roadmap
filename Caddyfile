@@ -1,0 +1,88 @@
+# Caddy fronts the roadmap container. The site is `output: "server"`
+# (astro.config.mjs): a Node process renders pages per request, and Caddy
+# serves what is genuinely static off disk — the hashed /_astro bundles,
+# public/ files, and the self-hosted editor at /admin/ when the image was built
+# with GITCMS_API_URL. Everything else proxies to Node on ASTRO_PORT.
+#
+# The platform terminates TLS at its edge, so this listens on plain HTTP on
+# $PORT and does not ask for a certificate.
+
+{
+	auto_https off
+	admin off
+	log {
+		output stderr
+		format console
+		level ERROR
+	}
+}
+
+:{$PORT:8080} {
+	encode zstd gzip
+
+	# Content-Security-Policy is per-handle: the site and the editor need
+	# different policies, and browsers enforce the intersection of stacked CSP
+	# headers. X-Frame-Options is absent for the same reason the sample site
+	# omits it: the CMS editor's Preview pane iframes these pages, and framing
+	# is governed per-handle by frame-ancestors instead.
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+
+	handle /healthz {
+		respond "ok" 200
+	}
+
+	# The self-hosted editor. Same policy shape as the sample site's /admin.
+	@admin path /admin /admin/*
+	handle @admin {
+		root * /app/dist/client
+		header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' {$CMS_API_ORIGIN:} {$CMS_WS_ORIGINS:} {$CMS_PREVIEW_ORIGIN:}; frame-src 'self' {$CMS_PREVIEW_ORIGIN:}; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+		@editorAssets path /admin/app.js /admin/app.css
+		header @editorAssets Cache-Control "public, max-age=31536000, immutable"
+		@editorShell not path /admin/app.js /admin/app.css
+		header @editorShell Cache-Control "no-store"
+		try_files {path} {path}/ /admin/index.html
+		file_server
+	}
+
+	# Astro's hashed bundles: immutable by construction.
+	handle /_astro/* {
+		root * /app/dist/client
+		header Content-Security-Policy "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
+		header Cache-Control "public, max-age=31536000, immutable"
+		file_server
+	}
+
+	# The site. Unlike the sample site this one ships JavaScript — the React
+	# island that drives the modal, the filter and the votes — so script-src is
+	# 'self' (Astro emits the island as a hashed /_astro module, nothing
+	# inline), and the fonts are Google's. connect-src 'self' covers the
+	# island's calls to the site's own /api and /auth routes; the browser
+	# never talks to the CMS directly. form-action 'self' admits the sign-out
+	# form, and the CMS origin is admitted too because the PKCE flow leaves
+	# through a top-level redirect that some browsers check against it.
+	#
+	# frame-ancestors is 'self' rather than 'none': the CMS editor's Preview
+	# pane iframes these pages, and the /admin editor is same-origin. An editor
+	# hosted elsewhere goes in CMS_EDITOR_ORIGINS (space-separated origins).
+	handle {
+		root * /app/dist/client
+		header Content-Security-Policy "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'self' {$CMS_EDITOR_ORIGINS:}; base-uri 'none'; form-action 'self' {$CMS_API_ORIGIN:}"
+
+		# `route` keeps file_server ahead of reverse_proxy: Caddy's default
+		# directive order would put the proxy first and render every static
+		# file through Node.
+		route {
+			file_server {
+				pass_thru
+			}
+			reverse_proxy 127.0.0.1:{$ASTRO_PORT:4321} {
+				header_up X-Forwarded-Proto {scheme}
+				header_up X-Forwarded-Host {host}
+			}
+		}
+	}
+}

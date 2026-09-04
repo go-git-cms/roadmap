@@ -1,0 +1,40 @@
+{
+  "name": "@gogitcms/roadmap",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "The public Go Git CMS roadmap. Features are content entries in this repo; endorsements and private notes are form API submissions, so voting never writes a commit. Astro SSR with React islands on the design system — the reference example of an interactive site built on the CMS.",
+  "scripts": {
+    "dev": "astro dev --port 4350",
+    "build": "astro build",
+    "preview": "node ./dist/server/entry.mjs",
+    "check": "astro check",
+    "// test": "Node's own runner over the pure modules — scoring, aggregation, the session cookie, relative time. Discovery is recursive on purpose: a hardcoded directory list is how a new test file ends up committed and never run.",
+    "test": "node --test --test-reporter=spec 'src/**/*.test.ts'"
+  },
+  "// dependencies": "Every @gogitcms package is the PUBLISHED one, never `workspace:` — this directory is mirrored out to its own public repository (.github/workflows/sync-roadmap.yml in the monorepo), where a workspace range does not resolve. piccolore and zod are astro's own deps, re-imported bare by the BUILT server; dist/ sits outside any package, so under pnpm's strict linking they resolve only against this package's top-level node_modules.",
+  "dependencies": {
+    "@astrojs/node": "^9.4.4",
+    "@astrojs/react": "^4.4.0",
+    "@gogitcms/design-system": "^0.15.0",
+    "@gogitcms/preview-astro": "^0.3.0",
+    "@gogitcms/preview-core": "^0.4.0",
+    "astro": "^5.14.1",
+    "gray-matter": "^4.0.3",
+    "marked": "^15.0.7",
+    "piccolore": "^0.1.3",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "zod": "^3.25.76"
+  },
+  "// devDependencies": "@gogitcms/preview is the editor-side preview plugin cms.config.mjs names; the CMS resolves it from this directory, but Astro never imports it, so it stays out of the runtime dependency graph.",
+  "devDependencies": {
+    "@astrojs/check": "^0.9.9",
+    "@gogitcms/preview": "^0.3.0",
+    "@types/node": "^22.7.4",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "dotenv": "^16.4.5",
+    "typescript": "^5.9.3"
+  }
+}

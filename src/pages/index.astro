@@ -1,0 +1,15 @@
+---
+import RoadmapLayout from "~/layouts/RoadmapLayout.astro";
+import RoadmapApp from "~/components/RoadmapApp";
+import { pageProps } from "~/lib/page";
+
+// The board: kanban lanes by delivery status. Rendered on the server with
+// current counts, then hydrated so the detail modal, the area filter and the
+// votes work without a round trip. `?area=` and `?feature=` are read here so a
+// deep link paints the right state before any JavaScript runs.
+const props = await pageProps(Astro, "board");
+---
+
+<RoadmapLayout title="Board">
+  <RoadmapApp {...props} client:load />
+</RoadmapLayout>

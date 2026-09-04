@@ -1,0 +1,162 @@
+# The roadmap's content model.
+#
+# Paths are relative to THIS FILE'S DIRECTORY (apps/roadmap in the monorepo, the
+# repository root once mirrored out), so the file works unchanged either way.
+# See docs/projects.md in go-git-cms/gogitcms.
+#
+# Two things live here, and the split between them is the whole idea of the site:
+#
+#   - `roadmap` — one markdown file per feature, under content/roadmap/. These
+#     are repository content: edited in the CMS, committed to git, reviewed
+#     like code.
+#   - `roadmap-endorsement` — a form. Endorsements and private notes are
+#     submissions to the form API, stored in the CMS database and never written
+#     into the repository. Voting does not create a commit.
+#
+# Component ↔ type rules (enforced on import): string → input | textarea | body |
+# slug | email | url | date | datetime | select | media; boolean → checkbox |
+# switch; integer/float → number | stepper | telephone | date | datetime |
+# select; array → list | mixedList; object → inlineGroup | group | media.
+
+version: 1
+
+content_models:
+  - name: roadmap
+    label: "{{title}}"
+    path: "content/roadmap/*.md"
+    # The filename is the feature's id: it is the `?feature=` deep link, the
+    # `featureId` an endorsement names, and the path the site shows. Derived
+    # from the title on create; renaming a file afterwards orphans its votes.
+    filename: "{{slugify title}}"
+    create: true
+    delete: ["admin"]
+    fields:
+      - name: title
+        label: Title
+        type: string
+        required: true
+
+      - name: area
+        label: Area
+        type: string
+        required: true
+        enum: [Editor, API, Auth, Media, Sync]
+        display: { component: select }
+
+      - name: status
+        label: Status
+        type: string
+        required: true
+        enum: [Exploring, Planned, In progress, Shipped]
+        display: { component: select }
+
+      # One line, shown on the board card under the title.
+      - name: blurb
+        label: Blurb
+        type: string
+        required: true
+        display: { component: textarea }
+        validate:
+          - { rule: maxLength, value: 160, message: "One line — the card has no room for more." }
+
+      # Names a live mockup composed from design-system components
+      # (src/components/mockups/). A feature with none shows no mockup frame.
+      - name: mockup
+        label: Mockup
+        type: string
+        enum: [diff, form, browser, schedule]
+        display: { component: select }
+
+      # When the entry was last materially changed. The card shows it as a
+      # relative time ("3d ago"); the CMS quotes date-shaped scalars when it
+      # saves, so the Astro schema coerces it (src/content.config.ts).
+      - name: updated
+        label: Last updated
+        type: string
+        required: true
+        display: { component: date }
+
+      # Shipped items show the release instead of the relative time.
+      - name: shippedIn
+        label: Shipped in (release)
+        type: string
+        display: { component: input }
+
+      # Tie-break within a lane and in the ranked list. Lower first.
+      - name: order
+        label: Order
+        type: integer
+        display: { component: number }
+
+      # The long description. Two paragraphs by convention — what the problem
+      # is, then a note on scope or current state — rendered through the
+      # site's prose styles with the second paragraph in the secondary ink.
+      - name: body
+        label: Description
+        type: string
+        display: { component: body, source: body, format: markdown, flavor: gfm }
+
+forms:
+  # One row per (person, feature). The CMS stores every submission as its own
+  # row; the SITE is what turns them into one vote per person — it submits on a
+  # visitor's behalf, and on a change it posts the new row and deletes the old
+  # one. Nothing here is versioned into git (no `store:`): an endorsement is
+  # signal for the maintainers, not content.
+  - name: roadmap-endorsement
+    label: Roadmap endorsement
+    description: A visitor's weight on a roadmap feature, with an optional private note.
+
+    # Every rule is role-gated, and that is the privacy model:
+    #
+    #   submit — the site's own content token (role editor), never the public.
+    #            A public submit would let anyone POST a forged `submittedBy`
+    #            straight to the CMS. Instead the site derives it from the CMS
+    #            session it verified, and holds the only credential that may
+    #            write.
+    #   read   — the same token, to aggregate the public counts server-side.
+    #            Notes never leave the site's server: the public payload carries
+    #            counts only, and a visitor reads back their own notes through
+    #            a session-scoped endpoint.
+    #   delete — withdrawing an endorsement removes the row and its note.
+    submit: ["editor", "admin"]
+    read: ["editor", "admin"]
+    delete: ["editor", "admin"]
+
+    fields:
+      # The filename of an entry in the `roadmap` model. The site refuses an id
+      # that matches no entry before it ever reaches here.
+      - name: featureId
+        label: Feature
+        type: string
+        required: true
+        validate:
+          - { rule: maxLength, value: 120 }
+
+      # `none` is stored, not deleted — "I don't need this" is signal too.
+      - name: weight
+        label: Weight
+        type: string
+        required: true
+        enum: [must, nice, none]
+        display: { component: select }
+
+      # PRIVATE. Read by maintainers in the CMS and by its author on the site.
+      - name: note
+        label: Note to maintainers
+        type: string
+        display: { component: textarea }
+        validate:
+          - { rule: maxLength, value: 1000, message: "A thousand characters is plenty." }
+
+      # The CMS user id of the endorser, derived server-side from the session
+      # the site verified. Never trusted from a browser.
+      - name: submittedBy
+        label: Submitted by (CMS user id)
+        type: string
+        required: true
+
+      # The handle shown next to the vote in the editor's submissions list, so
+      # a maintainer reading notes sees a person rather than a uuid.
+      - name: handle
+        label: Handle
+        type: string

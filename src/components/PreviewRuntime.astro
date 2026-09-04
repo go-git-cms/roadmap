@@ -1,0 +1,28 @@
+---
+// The preview-protocol runtime, loaded ONLY while a draft is active: the layout
+// renders this inside {Astro.locals.preview && ...}, so published pages ship
+// just the island's own JavaScript.
+//
+// The site renders drafts on the server (src/lib/content.ts composes them over
+// the files), so this page declares no live capabilities: the editor re-points
+// the iframe at a URL carrying each new draft, and the server paints it. What
+// the runtime adds is the protocol handshake (the editor's "Connecting to the
+// page" banner clears on cms:ready) and scroll restoration across reloads.
+---
+
+<script>
+  import { registerPreview } from "@gogitcms/preview-core";
+
+  // The editor origins allowed to exchange drafts with this page. The site's
+  // own origin covers the bundled /admin editor (same origin by construction).
+  // An editor hosted elsewhere must be named in PUBLIC_CMS_EDITOR_ORIGINS
+  // (comma-separated), the build-time sibling of the Caddyfile's runtime
+  // CMS_EDITOR_ORIGINS.
+  const origins = [window.location.origin];
+  const extra: string = import.meta.env.PUBLIC_CMS_EDITOR_ORIGINS ?? "";
+  for (const o of extra.split(",")) {
+    const trimmed = o.trim();
+    if (trimmed) origins.push(trimmed);
+  }
+  registerPreview({ allowedOrigins: origins });
+</script>

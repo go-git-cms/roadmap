@@ -1,0 +1,7 @@
+dist/
+.astro/
+node_modules/
+.env
+# The self-hosted editor bundle, built by `make roadmap-admin` with one
+# machine's API URL and ids baked in. Never committed.
+public/admin/
