@@ -1,11 +1,11 @@
 ---
-title: Command palette
 area: Editor
-status: In progress
 blurb: Jump to any entry, branch, or action from the keyboard.
 mockup: browser
-updated: 2026-09-04
 order: 3
+status: In progress
+title: Command palette
+updated: "2026-09-04"
 ---
 The editor is a file tree at heart, and file trees are slow to click through. The palette searches paths, entry titles, branches, and commands in one list.
 
