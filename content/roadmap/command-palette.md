@@ -3,7 +3,7 @@ area: Editor
 blurb: Jump to any entry, branch, or action from the keyboard.
 mockup: browser
 order: 3
-status: In progress
+status: Exploring
 title: Command palette
 updated: "2026-09-04"
 ---
