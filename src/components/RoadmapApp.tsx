@@ -88,6 +88,11 @@ export default function RoadmapApp(props: AppProps) {
         case "expired":
           flash("That sign-in attempt expired. Try again", true);
           break;
+        // The deployment never reached the CMS: sign-in is not configured
+        // here, so retrying cannot help and saying "failed" would be a lie.
+        case "unconfigured":
+          flash("Sign-in is not configured on this deployment", true);
+          break;
         default:
           flash("Sign-in failed. Try again", true);
       }

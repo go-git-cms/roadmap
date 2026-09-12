@@ -58,6 +58,24 @@ fi
 if [ -z "${ROADMAP_CMS_TOKEN:-}" ]; then
 	echo "WARNING: ROADMAP_CMS_TOKEN is unset — endorsement counts will be unavailable and voting disabled." >&2
 fi
+# The three inputs to config.authEnabled(). Any one of them missing turns
+# sign-in off wholesale: /auth/login bounces straight back without ever
+# reaching the CMS, which looks exactly like a login that redirects and leaves
+# you signed out. Warn about each by name so that is diagnosable from the
+# deploy log instead of from the browser.
+#
+# ROADMAP_CMS_URL especially: the CSP above falls back to GITCMS_API_URL for
+# CMS_API_ORIGIN, so a deployment missing ROADMAP_CMS_URL still serves a
+# form-action naming the CMS and looks correctly wired while the site's own
+# config has no CMS at all.
+if [ -z "${ROADMAP_CMS_URL:-}" ]; then
+	echo "WARNING: ROADMAP_CMS_URL is unset — sign-in is off and endorsement counts are unavailable;" >&2
+	echo "the roadmap renders signed out. A CSP built from GITCMS_API_URL does not configure sign-in." >&2
+fi
+if [ -z "${ROADMAP_PUBLIC_URL:-}" ]; then
+	echo "WARNING: ROADMAP_PUBLIC_URL is unset — sign-in is off; the roadmap renders signed out." >&2
+	echo "It is what the PKCE redirect_uri is built from, and the CMS must trust it via CMS_DOCS_URL." >&2
+fi
 if [ -z "${ROADMAP_SESSION_SECRET:-}" ]; then
 	echo "WARNING: ROADMAP_SESSION_SECRET is unset — sign-in is off; the roadmap renders signed out." >&2
 fi
