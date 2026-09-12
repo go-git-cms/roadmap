@@ -8,4 +8,10 @@ status: Exploring
 title: Media CDN
 updated: "2026-09-12"
 ---
-The
+The media CDN enables teams to move fast with branch-based access to your raw media files.
+
+* Process images with the resizing and manipulation API to art direct imagery on-the-fly
+
+* Process videos with watermarks and transcode to other formats
+
+* Virus scan PDFs and other binaries
