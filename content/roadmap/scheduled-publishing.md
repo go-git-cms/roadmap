@@ -3,7 +3,7 @@ area: Sync
 blurb: Queue a commit for a date and let the runner land it.
 mockup: schedule
 order: 1
-status: Planned
+status: Exploring
 title: Scheduled publishing
 updated: "2026-09-04"
 ---
